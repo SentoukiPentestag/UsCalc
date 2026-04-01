@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relationship Tracker</title>
+  <style>
+    :root {
+      --bg1: #1f1020;
+      --bg2: #3a1d3d;
+      --card: rgba(255,255,255,0.1);
+      --border: rgba(255,255,255,0.16);
+      --text: #fff7fb;
+      --muted: #f3d9e6;
+      --accent-2: #ffd6e5;
+      --shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(255,143,177,0.25), transparent 35%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(100%, 460px);
+      display: grid;
+      gap: 16px;
+    }
+
+    .header,
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+    }
+
+    .header {
+      padding: 24px;
+      text-align: center;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent-2);
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    .big-number {
+      font-size: clamp(2.1rem, 8vw, 3.4rem);
+      font-weight: 800;
+      line-height: 1;
+      margin: 0 0 10px;
+    }
+
+    .breakdown-text {
+      margin-top: 14px;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .date-line {
+      margin-top: 14px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 12px;
+      }
+
+      .header,
+      .card {
+        border-radius: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="header">
+      <h1 class="title">Us Tracker</h1>
+      <p class="subtitle">A simple relationship counter you can later turn into a phone widget.</p>
+    </section>
+
+    <section class="card">
+      <div class="label">💖 Officially together</div>
+      <p class="big-number" id="officialDays">0 days</p>
+      <div class="breakdown-text" id="officialBreakdown"></div>
+      <div class="date-line" id="officialDate"></div>
+    </section>
+
+    <section class="card">
+      <div class="label">✨ Since you met</div>
+      <p class="big-number" id="metDays">0 days</p>
+      <div class="breakdown-text" id="metBreakdown"></div>
+      <div class="date-line" id="metDate"></div>
+    </section>
+
+    <p class="footer-note">Update the two dates in the JavaScript if needed.</p>
+  </main>
+
+  <script>
+    // Change these if your dates are in a different year.
+    // I assumed you meant 16 Nov 2025 and 16 Dec 2025.
+    const dates = {
+      met: new Date(2021, 11, 16),
+      official: new Date(2021, 12, 16)
+    };
+
+    const officialDaysEl = document.getElementById('officialDays');
+    const officialBreakdownEl = document.getElementById('officialBreakdown');
+    const officialDateEl = document.getElementById('officialDate');
+
+    const metDaysEl = document.getElementById('metDays');
+    const metBreakdownEl = document.getElementById('metBreakdown');
+    const metDateEl = document.getElementById('metDate');
+
+    function startOfDay(date) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function getFullBreakdown(fromDate, toDate = new Date()) {
+      const start = startOfDay(fromDate);
+      const end = startOfDay(toDate);
+
+      let years = end.getFullYear() - start.getFullYear();
+      let anchor = new Date(start.getFullYear() + years, start.getMonth(), start.getDate());
+
+      if (anchor > end) {
+        years--;
+        anchor = new Date(start.getFullYear() + years, start.getMonth(), start.getDate());
+      }
+
+      const diffMs = end - anchor;
+      const remainingDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const weeks = Math.floor(remainingDays / 7);
+      const days = remainingDays % 7;
+
+      return { years, weeks, days };
+    }
+
+    function getTotalDays(fromDate, toDate = new Date()) {
+      const start = startOfDay(fromDate);
+      const end = startOfDay(toDate);
+      return Math.floor((end - start) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    function plural(value, word) {
+      return `${value} ${word}${value === 1 ? '' : 's'}`;
+    }
+
+    function renderBreakdown(container, breakdown) {
+      container.textContent = `That's ${plural(breakdown.years, 'year')}, ${plural(breakdown.weeks, 'week')}, and ${plural(breakdown.days, 'day')}.`;
+    }
+
+    function updateCounters() {
+      const officialDays = getTotalDays(dates.official);
+      const metDays = getTotalDays(dates.met);
+
+      officialDaysEl.textContent = `${officialDays} days`;
+      metDaysEl.textContent = `${metDays} days`;
+
+      renderBreakdown(officialBreakdownEl, getFullBreakdown(dates.official));
+      renderBreakdown(metBreakdownEl, getFullBreakdown(dates.met));
+
+      officialDateEl.textContent = `Official since ${formatDate(dates.official)}`;
+      metDateEl.textContent = `You met on ${formatDate(dates.met)}`;
+    }
+
+    updateCounters();
+  </script>
+</body>
+</html>
